@@ -52,12 +52,12 @@ private:
             time_t ntpTime = client->getTime();
 
             if (setNetworkSystemClock(ntpTime)) {
-                Message = "Synced with " + srv;
+                Message = "从 " + srv + " 同步";
             } else {
-                Message = "Unable to set network clock.";
+                Message = "同步网络时间失败.";
             }
         } catch (const NtpException& e) {
-            Message = "Error: " + std::string(e.what());
+            Message = "错误: " + std::string(e.what());
         }
 
         delete client;
@@ -69,11 +69,11 @@ private:
 
         Result rs = timeGetCurrentTime(TimeType_UserSystemClock, (u64*)&userTime);
         if (R_FAILED(rs)) {
-            Message = "GetTimeUser " + std::to_string(rs);
+            Message = "获取本地时间 " + std::to_string(rs);
             return;
         }
 
-        std::string usr = "User time!";
+        std::string usr = "设置用户时间成功!";
         std::string gr8 = "";
         rs = timeGetCurrentTime(TimeType_NetworkSystemClock, (u64*)&netTime);
         if (!R_FAILED(rs) && netTime < userTime) {
@@ -83,7 +83,7 @@ private:
         if (setNetworkSystemClock(userTime)) {
             Message = usr.append(gr8);
         } else {
-            Message = "Unable to set network clock.";
+            Message = "设置网络时间失败.";
         }
     }
 
@@ -91,7 +91,7 @@ private:
         time_t currentTime;
         Result rs = timeGetCurrentTime(TimeType_NetworkSystemClock, (u64*)&currentTime);
         if (R_FAILED(rs)) {
-            Message = "GetTimeNetwork " + std::to_string(rs);
+            Message = "获取网络时间 " + std::to_string(rs);
             return;
         }
 
@@ -100,9 +100,9 @@ private:
 
         try {
             time_t ntpTimeOffset = client->getTimeOffset(currentTime);
-            Message = "Offset: " + std::to_string(ntpTimeOffset) + "s";
+            Message = "偏移: " + std::to_string(ntpTimeOffset) + "s";
         } catch (const NtpException& e) {
-            Message = "Error: " + std::string(e.what());
+            Message = "失败: " + std::string(e.what());
         }
 
         delete client;
@@ -171,7 +171,7 @@ public:
     }
 
     virtual tsl::elm::Element* createUI() override {
-        auto frame = new tsl::elm::CustomOverlayFrame("QuickNTP", std::string("by NedEX - v") + APP_VERSION);
+        auto frame = new tsl::elm::CustomOverlayFrame("时间校准", std::string("南宫镜 汉化 ") + APP_VERSION);
 
         auto list = new tsl::elm::List();
 
@@ -183,7 +183,7 @@ public:
             return false;
         });
 
-        list->addItem(new tsl::elm::CategoryHeader("Pick server   |   \uE0E0  Sync   |   \uE0E3  Offset"));
+        list->addItem(new tsl::elm::CategoryHeader("选择服务器   |   \uE0E0  同步   |   \uE0E3  偏移"));
 
         auto* trackbar = new tsl::elm::NamedStepTrackBarVector("\uE017", serverNames);
         trackbar->setValueChangedListener([this](u8 val) {
@@ -195,25 +195,25 @@ public:
         });
         list->addItem(trackbar);
 
-        auto* syncTimeItem = new tsl::elm::ListItem("Sync time");
+        auto* syncTimeItem = new tsl::elm::ListItem("同步时间");
         syncTimeItem->setClickListener(syncListener(HidNpadButton_A));
         list->addItem(syncTimeItem);
 
         list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-                          renderer->drawString("Syncs the time with the selected server.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+                          renderer->drawString("使用所选服务器同步时间.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
                       }),
                       50);
 
-        auto* getOffsetItem = new tsl::elm::ListItem("Get offset");
+        auto* getOffsetItem = new tsl::elm::ListItem("获取偏移");
         getOffsetItem->setClickListener(offsetListener(HidNpadButton_A));
         list->addItem(getOffsetItem);
 
         list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-                          renderer->drawString("Gets the seconds offset with the selected server.\n\n\uE016  A value of ± 3 seconds is acceptable.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+                          renderer->drawString("查看所选服务器时间误差\n\n\uE016  ±3秒以内的差异是正常的.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
                       }),
                       70);
 
-        auto* setToInternalItem = new tsl::elm::ListItem("User-set time");
+        auto* setToInternalItem = new tsl::elm::ListItem("用户时间");
         setToInternalItem->setClickListener([this](u64 keys) {
             if (keys & HidNpadButton_A) {
                 return operationBlock([&]() {
@@ -225,7 +225,7 @@ public:
         list->addItem(setToInternalItem);
 
         list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-                          renderer->drawString("Sets the network time to the user-set time.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
+                          renderer->drawString("将网络时间设置为用户时间.", false, x + 20, y + 20, 15, renderer->a(tsl::style::color::ColorDescription));
                       }),
                       50);
 
