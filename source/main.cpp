@@ -151,6 +151,7 @@ public:
             if (ini_openread(loc, &fp)) {
                 iniFile = loc;
                 ini_close(&fp);
+                break;
             }
         }
 
@@ -243,7 +244,23 @@ public:
 class NtpOverlay : public tsl::Overlay {
 public:
     virtual void initServices() override {
-        ASSERT_FATAL(socketInitializeDefault());
+        constexpr SocketInitConfig socketInitConfig = {
+            // TCP buffers
+            .tcp_tx_buf_size     = 16 * 1024,   // 16 KB default
+            .tcp_rx_buf_size     = 16 * 1024*2,   // 16 KB default
+            .tcp_tx_buf_max_size = 64 * 1024,   // 64 KB default max
+            .tcp_rx_buf_max_size = 64 * 1024*2,   // 64 KB default max
+            
+            // UDP buffers
+            .udp_tx_buf_size     = 512,         // 512 B default
+            .udp_rx_buf_size     = 512,         // 512 B default
+        
+            // Socket buffer efficiency
+            .sb_efficiency       = 1,           // 0 = default, balanced memory vs CPU
+                                                // 1 = prioritize memory efficiency (smaller internal allocations)
+            .bsd_service_type    = BsdServiceType_Auto // Auto-select service
+        };
+        ASSERT_FATAL(socketInitialize(&socketInitConfig));
         ASSERT_FATAL(nifmInitialize(NifmServiceType_User));
         ASSERT_FATAL(timeInitialize());
         ASSERT_FATAL(smInitialize()); // Needed
